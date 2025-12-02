@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 TEST DHT22 - Version Finale
-Capteur température/humidité sur GPIO17
+Capteur température/humidité sur GPIO
 """
 
 import time
@@ -16,11 +16,11 @@ def test_dht22_final():
     print("💡 Les erreurs occasionnelles sont normales")
     
     # Initialisation
-    dht_device = adafruit_dht.DHT22(board.D17)
+    dht_device = adafruit_dht.DHT22(board.D17 )
     print("✅ DHT22 initialisé")
     
     successful_readings = 0
-    total_attempts = 0
+    total_attempts = 0  
     
     try:
         print("\n🔍 Début des lectures...")

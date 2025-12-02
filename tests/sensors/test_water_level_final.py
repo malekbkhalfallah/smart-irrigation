@@ -10,7 +10,7 @@ import lgpio
 class WaterLevelSensor:
     """Capteur de niveau d'eau ST045 - Version finale"""
     
-    def __init__(self, sensor_pin=22):
+    def __init__(self, sensor_pin=23):
         self.sensor_pin = sensor_pin
         self.chip = lgpio.gpiochip_open(0)
         lgpio.gpio_claim_input(self.chip, sensor_pin)
@@ -43,9 +43,9 @@ def test_water_final():
     print("💧 TEST FINAL CAPTEUR NIVEAU D'EAU")
     print("=" * 50)
     print("✅ CAPTEUR VALIDÉ - Fonctionne avec eau conductrice")
-    print("📍 GPIO22 | Eau = 1 | Sec = 0")
+    print("📍 GPIO23 | Eau = 1 | Sec = 0")
     
-    sensor = WaterLevelSensor(22)
+    sensor = WaterLevelSensor(23)
     
     try:
         print("\n🔍 Test en cours...")

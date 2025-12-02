@@ -7,7 +7,7 @@ import time
 import lgpio
 
 class SmartSoilSensor:
-    def __init__(self, pin=23):
+    def __init__(self, pin=24):
         self.pin = pin
         self.chip = lgpio.gpiochip_open(0)
         lgpio.gpio_claim_input(self.chip, pin)
@@ -17,7 +17,7 @@ class SmartSoilSensor:
         self.max_history = 10
         
         print("🌱 CAPTEUR HUMIDITÉ SOL INTELLIGENT")
-        print("📍 GPIO23 | 0=HUMIDE, 1=SEC")
+        print("📍 GPIO24 | 0=HUMIDE, 1=SEC")
     
     def read_state(self):
         """Lire l'état actuel"""
@@ -104,7 +104,7 @@ class SmartSoilSensor:
 
 # Menu simple
 def main():
-    sensor = SmartSoilSensor(23)
+    sensor = SmartSoilSensor(24)
     
     try:
         while True:

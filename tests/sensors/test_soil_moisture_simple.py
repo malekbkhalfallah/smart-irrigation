@@ -12,9 +12,9 @@ print("=" * 45)
 
 # Setup GPIO
 chip = lgpio.gpiochip_open(0)
-lgpio.gpio_claim_input(chip, 23)
+lgpio.gpio_claim_input(chip, 24)
 
-print("📍 GPIO23 (Broche 16)")
+print("📍 GPIO24 (Broche 18)")
 print("🎯 0 = HUMIDE, 1 = SEC")
 print("💧 Testez avec eau/terre/air")
 print("🛑 Ctrl+C pour arrêter\n")
@@ -23,7 +23,7 @@ try:
     secondes = 0
     while True:
         # Lecture directe
-        valeur = lgpio.gpio_read(chip, 23)
+        valeur = lgpio.gpio_read(chip, 24)
         
         if valeur == 0:
             print(f"⏱️  {secondes}s: 💧 HUMIDE - Terre humide")

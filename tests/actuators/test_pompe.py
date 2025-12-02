@@ -4,7 +4,7 @@ from gpiozero import OutputDevice
 import time
 
 # Configuration - même broche
-RELAY_GPIO = 17
+RELAY_GPIO = 26  # GPIO26 pour le relais de la pompe
 
 # Initialisation avec gpiozero
 relay = OutputDevice(RELAY_GPIO, active_high=True, initial_value=False)
@@ -26,3 +26,4 @@ except KeyboardInterrupt:
 finally:
     relay.off()  # S'assure que le relais est éteint
     print("Pompe arrêtée, programme terminé.")
+    
