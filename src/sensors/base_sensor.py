@@ -1,0 +1,1 @@
+#classe de base pour les capteurs

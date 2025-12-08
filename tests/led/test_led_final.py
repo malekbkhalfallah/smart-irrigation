@@ -8,26 +8,26 @@ import time
 import lgpio
 
 def test_led_final():
-    """Test final de la LED sur GPIO4"""
+    """Test final de la LED sur GPIO16"""
     print("💡 TEST LED - RASPBERRY PI 5")
     print("=" * 40)
-    print("📍 GPIO4 (Broche physique 7)")
+    print("📍 GPIO16 (Broche physique 36)")
     print("🎯 Validation communication GPIO")
     
     try:
         # Initialisation
         chip = lgpio.gpiochip_open(0)
-        lgpio.gpio_claim_output(chip, 4)
+        lgpio.gpio_claim_output(chip, 16)
         print("✅ GPIO initialisé")
         
         # Test de clignotement
         print("🔴 Début du test...")
         for i in range(6):
-            lgpio.gpio_write(chip, 4, 1)  # ON
+            lgpio.gpio_write(chip, 16, 1)  # ON
             print(f"   Cycle {i+1}: 🔴 ALLUMÉ")
             time.sleep(0.5)
             
-            lgpio.gpio_write(chip, 4, 0)  # OFF
+            lgpio.gpio_write(chip, 16, 0)  # OFF
             print(f"   Cycle {i+1}: ⚫ ÉTEINT")
             time.sleep(0.5)
         

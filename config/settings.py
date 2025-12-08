@@ -13,19 +13,18 @@ from typing import Dict, Any, List
 class GPIOConfig:
     """Configuration des broches GPIO"""
     # Capteurs
-    SOIL_MOISTURE_PIN: int = 24  # GPIO24
-    DHT22_PIN: int = 17               # GPIO17
-    RAINDROP_ANALOG_PIN: int = 27    # GPIO27 (ADC)
-    RAINDROP_DIGITAL_PIN: int = 22   # GPIO22
-    WATER_LEVEL_PIN: int = 23   # GPIO23
+    SOIL_MOISTURE_PIN: int = 24         # GPIO24  valide
+    DHT22_PIN: int = 17                 # GPIO17  valide
+    RAINDROP_DIGITAL_PIN: int = 27      # GPIO27
+    WATER_LEVEL_PIN: int = 23           # GPIO23  valide
     
     # Actionneurs
-    PUMP_RELAY_PIN: int = 26         # GPIO26
-    STATUS_LED_PIN: int = 4         # GPIO4
+    PUMP_RELAY_PIN: int = 26            # GPIO26  valide
+    STATUS_LED_PIN: int = 16            # GPIO16  valide
     
    
 @dataclass
-class SensorThresholds:
+class IrrigationSettings:
     """Seuils pour les capteurs"""
     # Humidité du sol (%) - type de sol
     SOIL_MOISTURE_THRESHOLDS: Dict[str, Dict[str, float]] = field(
