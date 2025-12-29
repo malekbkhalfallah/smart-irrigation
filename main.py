@@ -1,92 +1,130 @@
-# main.py
-
-import os
-os.environ['GPIO_SIMULATE'] = 'true'
+"""
+Système d'Irrigation Intelligent - Version avec Firebase (adapté à ta structure)
+"""
+import time
 import logging
+from datetime import datetime
+from core.database import db_manager
+from firebase_config import firebase_manager
 
-from core.sensors.soil_moisture import SoilMoistureSensor
-from core.sensors.dht22 import DHT22Sensor
-from core.sensors.raindrop import RaindropSensor
-from core.sensors.water_level import WaterLevelSensor
+# Import de tes modules existants
+from sensors.sensor_manager import sensor_manager
+from decision_engine.irrigation_logic import irrigation_logic
+from actuators.water_pump import water_pump
+from config.settings import config
 
-from core.actuators.water_pump import RelayWaterPump
-from core.actuators.status_led import StatusLED
-
-from core.decision_engine.main_controller import MainController
-from core.decision_engine.irrigation_logic import IrrigationSettings
-from core.config.plant_profile import PlantProfile
-from core.config.system_config import SystemConfig
-
-
-# ==================================================
-# LOGGING
-# ==================================================
-
+# Configuration logging
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-
-# ==================================================
-# CONFIGURATION
-# ==================================================
-
-def create_sensors():
-    return {
-        "soil_moisture": SoilMoistureSensor(pin=17),
-        "air": DHT22Sensor(pin=27),
-        "rain": RaindropSensor(pin=22),
-        "water_level": WaterLevelSensor(pin=23),
-    }
-
-
-def create_actuators():
-    pump = RelayWaterPump(pin=5)
-    led = StatusLED(pin=6)
-    return pump, led
-
-
-def create_profiles():
-    plant = PlantProfile(
-        name="Tomate",
-        soil_type="Loam",
-        min_moisture=35,
-        max_moisture=70,
-        optimal_moisture=50,
-    )
-
-    settings = IrrigationSettings(
-        irrigation_duration_sec=10,
-        min_interval_sec=60,
-        min_water_level=20,
-        max_irrigations_per_day=3,
-        enable_rain_skip=True,
-    )
-
-    return plant, settings
-
-
-
-# ==================================================
-# ENTRY POINT
-# ==================================================
+logger = logging.getLogger(__name__)
 
 def main():
-    sensors = create_sensors()
-    pump, led = create_actuators()
-    plant, settings = create_profiles()
+    """Fonction principale adaptée à ta structure"""
+    logger.info("🚀 Démarrage du système d'irrigation intelligent")
+    logger.info(f"📊 Structure détectée: capteurs réels, pompe GPIO, Firebase")
+    
+    # Afficher l'état Firebase
+    if firebase_manager.connected:
+        logger.info("✅ Firebase connecté - Synchronisation cloud activée")
+    else:
+        logger.info("ℹ️ Firebase non connecté - Mode local seulement")
+    
+    # Boucle principale
+    try:
+        while True:
+            # Lire les capteurs (méthode existante de ton système)
+            sensor_data = sensor_manager.read_all()
+            
+            if sensor_data["success"]:
+                logger.info(f"📊 Capteurs: {sensor_data['sensors']}")
+                
+                # Sauvegarder localement (via ton db_manager)
+                db_manager.save_sensor_reading(sensor_data)
+                
+                # Sauvegarder dans Firebase si connecté
+                if firebase_manager.connected:
+                    firebase_manager.save_sensor_data(sensor_data)
+                
+                # Prendre une décision d'irrigation (via ta logique existante)
+                should_irrigate, reason = irrigation_logic.make_decision(sensor_data)
+                
+                if should_irrigate:
+                    logger.info(f"💧 Irrigation nécessaire: {reason}")
+                    
+                    # Exécuter l'irrigation via ta logique existante
+                    success = irrigation_logic.execute_decision(should_irrigate, reason)
+                    
+                    if success:
+                        # Récupérer la durée depuis ta config
+                        duration = config.irrigation.IRRIGATION_DURATION
+                        
+                        # Sauvegarder dans Firebase
+                        if firebase_manager.connected:
+                            firebase_manager.save_irrigation_event(
+                                duration=duration,
+                                reason=reason,
+                                triggered_by="auto"
+                            )
+            
+            # Sauvegarder le statut système
+            system_status = {
+                "status": "running",
+                "last_sensor_read": datetime.now(),
+                "firebase_connected": firebase_manager.connected,
+                "sensor_success": sensor_data.get("success", False),
+                "plant": config.plant.name,
+                "mode": "online" if not config.offline_mode else "offline"
+            }
+            
+            # Sauvegarder le statut (ta db_manager le fera aussi dans Firebase)
+            db_manager.save_system_status(system_status)
+            
+            # Attendre avant prochaine lecture (utilise ton intervalle de config)
+            logger.info(f"⏳ Prochaine vérification dans {config.irrigation.CHECK_INTERVAL} secondes...")
+            time.sleep(config.irrigation.CHECK_INTERVAL)
+            
+    except KeyboardInterrupt:
+        logger.info("🛑 Arrêt demandé par l'utilisateur")
+    except Exception as e:
+        logger.error(f"❌ Erreur: {e}")
+    finally:
+        # Nettoyage
+        water_pump.cleanup()
+        sensor_manager.cleanup()
+        logger.info("👋 Système arrêté proprement")
 
-    controller = MainController(
-        sensors=sensors,
-        pump=pump,
-        status_led=led,
-        plant_profile=plant,
-        settings=settings,
-        loop_interval=5.0,
-    )
-
-    controller.run()
-
+def test_system():
+    """Teste tous les composants"""
+    logger.info("🧪 TEST SYSTÈME COMPLET")
+    
+    # Test Firebase
+    fb_status = db_manager.get_firebase_status()
+    logger.info(f"Firebase: {'✅ Connecté' if fb_status.get('connected') else '❌ Non connecté'}")
+    
+    # Test capteurs
+    sensor_data = sensor_manager.read_all()
+    logger.info(f"Capteurs: {'✅ OK' if sensor_data['success'] else '❌ Erreur'}")
+    
+    # Test pompe
+    pump_status = water_pump.get_status()
+    logger.info(f"Pompe: {pump_status}")
+    
+    # Test configuration
+    logger.info(f"Plante: {config.plant.name}")
+    logger.info(f"Mode: {'online' if not config.offline_mode else 'offline'}")
+    
+    return all([
+        sensor_data["success"],
+        fb_status.get("connected", False) or True,  # Firebase optionnel
+        pump_status is not None
+    ])
 
 if __name__ == "__main__":
-    main()
+    # Tester le système d'abord
+    if test_system():
+        logger.info("✅ Tous les tests passés - Démarrage du système")
+        main()
+    else:
+        logger.error("❌ Tests échoués - Vérifie la configuration")

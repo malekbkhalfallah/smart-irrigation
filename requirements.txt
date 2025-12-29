@@ -3,3 +3,7 @@ lgpio==0.2.2.0
 RPi.GPIO==0.7.1a4
 spidev==3.6
 gpiozero==2.0.1
+
+Flask
+requests
+python-dotenv
