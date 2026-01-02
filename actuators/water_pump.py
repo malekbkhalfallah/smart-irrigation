@@ -1,117 +1,95 @@
 """
-Contrôle de la pompe à eau via relais
+Contrôle de la pompe à eau via relais - UTILISE GPIO CENTRAL
 """
 import time
 import logging
 from typing import Optional
 from config.settings import config
+from core.gpio_manager import gpio_central
 
 logger = logging.getLogger(__name__)
 
 class WaterPump:
-    """Contrôle de la pompe à eau"""
+    """Contrôle de la pompe à eau via relais - UTILISE GPIO CENTRAL"""
     
-    def __init__(self, pin: int = 26):
-        self.pin = pin
-        self.chip = None
+    def __init__(self):
+        self.pin = config.gpio.PUMP_RELAY_PIN
         self.is_running = False
-        self.total_run_time = 0  # en secondes
+        self.total_run_time = 0
         self.last_activation = None
-        self.initialize()
-    
-    def initialize(self):
-        """Initialise le GPIO pour la pompe"""
-        try:
-            import lgpio
-            self.chip = lgpio.gpiochip_open(0)
-            lgpio.gpio_claim_output(self.chip, self.pin)
-            # Désactivé par défaut (relais normalement ouvert)
-            lgpio.gpio_write(self.chip, self.pin, 0)
-            logger.info(f"Pompe initialisée sur GPIO{self.pin}")
-        except ImportError:
-            logger.warning("lgpio non disponible - mode simulation")
-            self.chip = None
-        except Exception as e:
-            logger.error(f"Erreur initialisation pompe: {e}")
-            self.chip = None
+        self.default_duration = config.irrigation.IRRIGATION_DURATION
+        
+        logger.info(f"✅ Pompe initialisée sur GPIO{self.pin} - UTILISE GPIO CENTRAL")
     
     def start(self, duration: Optional[int] = None) -> bool:
         """
-        Démarre la pompe
-        Args:
-            duration: durée en secondes (si None, démarre manuellement)
-        Returns:
-            True si réussi
+        Démarre la pompe via GPIO central
         """
-        if self.chip is None:
-            logger.warning("Mode simulation - pompe démarrée")
-            self.is_running = True
-            self.last_activation = time.time()
-            return True
+        if self.is_running:
+            logger.warning("⚠️ Pompe déjà en fonctionnement")
+            return False
+        
+        if duration is None:
+            duration = self.default_duration
         
         try:
-            import lgpio
-            # Activer le relais (1 = activé pour relais normalement ouvert)
-            lgpio.gpio_write(self.chip, self.pin, 1)
+            logger.info(f"🚰 Démarrage pompe pour {duration} secondes...")
+            
+            # Activation via GPIO central
+            gpio_central.write(self.pin, True)
+            
             self.is_running = True
             self.last_activation = time.time()
-            logger.info(f"Pompe démarrée (durée: {duration}s)")
             
-            # Si durée spécifiée, arrêt automatique
-            if duration:
+            logger.info(f"✅ Pompe démarrée pour {duration} secondes")
+            
+            if duration > 0:
+                logger.info(f"⏳ Attente {duration} secondes...")
                 time.sleep(duration)
                 self.stop()
             
             return True
             
         except Exception as e:
-            logger.error(f"Erreur démarrage pompe: {e}")
+            logger.error(f"❌ Erreur démarrage pompe: {str(e)}")
             return False
     
     def stop(self) -> bool:
-        """Arrête la pompe"""
-        if self.chip is None:
-            logger.warning("Mode simulation - pompe arrêtée")
-            self.is_running = False
+        """Arrête immédiatement la pompe via GPIO central"""
+        if not self.is_running:
+            logger.debug("Pompe déjà arrêtée")
             return True
         
         try:
-            import lgpio
-            lgpio.gpio_write(self.chip, self.pin, 0)
+            gpio_central.write(self.pin, False)
+            
             self.is_running = False
             
-            # Calculer temps d'activation
             if self.last_activation:
                 run_time = time.time() - self.last_activation
                 self.total_run_time += run_time
-                logger.info(f"Pompe arrêtée (durée: {run_time:.1f}s)")
+                logger.info(f"✅ Pompe arrêtée après {run_time:.1f} secondes")
             
             return True
             
         except Exception as e:
-            logger.error(f"Erreur arrêt pompe: {e}")
+            logger.error(f"❌ Erreur arrêt pompe: {str(e)}")
             return False
     
     def get_status(self) -> dict:
-        """Retourne le statut de la pompe"""
         return {
             "is_running": self.is_running,
             "total_run_time": self.total_run_time,
             "last_activation": self.last_activation,
-            "pin": self.pin
+            "pin": self.pin,
+            "default_duration": self.default_duration
         }
     
     def cleanup(self):
-        """Nettoie et arrête la pompe"""
+        """Arrête la pompe si nécessaire"""
         if self.is_running:
+            logger.info("🛑 Arrêt d'urgence de la pompe...")
             self.stop()
-        if self.chip:
-            try:
-                import lgpio
-                lgpio.gpiochip_close(self.chip)
-            except:
-                pass
-        logger.info("Pompe nettoyée")
 
-# Instance globale
-water_pump = WaterPump(config.gpio.PUMP_RELAY_PIN)
+# Instance globale unique
+water_pump = WaterPump()

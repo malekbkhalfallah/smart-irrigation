@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Irrigation Intelligente</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: Arial, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: white;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+        h1 { text-align: center; margin-bottom: 30px; }
+        .card {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .sensor-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 10px;
+            margin: 10px 0;
+        }
+        .status-ok { background: #4CAF50; }
+        .status-warning { background: #FF9800; }
+        .status-error { background: #F44336; }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+            width: 100%;
+        }
+        button:hover { background: #45a049; }
+        button.danger { background: #F44336; }
+        button.danger:hover { background: #d32f2f; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌱 Système d'Irrigation Intelligent</h1>
+        
+        <div class="card">
+            <h2>📊 Statut Système</h2>
+            <div id="system-status">Chargement...</div>
+        </div>
+        
+        <div class="card">
+            <h2>🔍 Capteurs</h2>
+            <div id="sensors-data">Chargement...</div>
+        </div>
+        
+        <div class="card">
+            <h2>🎯 Contrôles</h2>
+            <button onclick="controlPump('start')">🚰 Démarrer la Pompe (30s)</button>
+            <button onclick="controlPump('stop')" class="danger">⏹️ Arrêter la Pompe</button>
+            <button onclick="refreshData()">🔄 Actualiser</button>
+        </div>
+        
+        <div class="card">
+            <h2>💬 Chatbot Assistant</h2>
+            <input type="text" id="chat-input" placeholder="Posez votre question..." 
+                   style="width: 100%; padding: 15px; margin-bottom: 10px; border-radius: 10px;">
+            <button onclick="askChatbot()">🤖 Demander au Chatbot</button>
+            <div id="chat-response" style="margin-top: 15px;"></div>
+        </div>
+    </div>
+    
+    <script>
+        const API_URL = 'http://' + window.location.hostname + ':5000';
+        
+        async function fetchSystemStatus() {
+            try {
+                const response = await fetch(API_URL + '/api/status');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const sensors = data.data.sensors;
+                    const html = `
+                        <div class="status status-ok">✅ Système en ligne</div>
+                        <p>🌡️ Température: <span class="sensor-value">${sensors.dht22?.temperature || 'N/A'}°C</span></p>
+                        <p>💨 Humidité air: <span class="sensor-value">${sensors.dht22?.humidity || 'N/A'}%</span></p>
+                        <p>💧 Sol: <span class="sensor-value">${sensors.soil?.moisture_percent || 'N/A'}%</span></p>
+                        <p>💦 Eau: <span class="sensor-value">${sensors.water?.water_percent || 'N/A'}%</span></p>
+                        <p>🌧️ Pluie: <span class="sensor-value">${sensors.rain?.rain_detected ? 'OUI' : 'NON'}</span></p>
+                    `;
+                    document.getElementById('sensors-data').innerHTML = html;
+                }
+            } catch (error) {
+                document.getElementById('sensors-data').innerHTML = 
+                    '<div class="status status-error">❌ Erreur connexion</div>';
+            }
+        }
+        
+        async function controlPump(action) {
+            try {
+                const response = await fetch(API_URL + '/api/control/pump', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({action: action, duration: 30})
+                });
+                const data = await response.json();
+                
+                alert(data.success ? '✅ ' + data.message : '❌ ' + (data.error || 'Erreur'));
+            } catch (error) {
+                alert('❌ Erreur connexion');
+            }
+        }
+        
+        async function askChatbot() {
+            const input = document.getElementById('chat-input');
+            const question = input.value.trim();
+            
+            if (!question) {
+                alert('❌ Entrez une question');
+                return;
+            }
+            
+            try {
+                const response = await fetch(API_URL + '/api/chatbot/ask', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({question: question})
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('chat-response').innerHTML = `
+                        <div class="card">
+                            <p><strong>Vous:</strong> ${data.question}</p>
+                            <p><strong>Assistant:</strong> ${data.response}</p>
+                            <p><small>Mode: ${data.mode === 'online' ? '🌐 En ligne' : '📴 Hors ligne'}</small></p>
+                        </div>
+                    `;
+                    input.value = '';
+                }
+            } catch (error) {
+                alert('❌ Erreur chatbot');
+            }
+        }
+        
+        function refreshData() {
+            fetchSystemStatus();
+            alert('✅ Données actualisées');
+        }
+        
+        // Charger les données au démarrage
+        fetchSystemStatus();
+        
+        // Actualiser toutes les 10 secondes
+        setInterval(fetchSystemStatus, 10000);
+        
+        // Permettre Enter dans le chat
+        document.getElementById('chat-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') askChatbot();
+        });
+    </script>
+</body>
+</html>

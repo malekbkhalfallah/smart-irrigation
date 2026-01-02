@@ -1,9 +1,18 @@
-adafruit-circuitpython-dht==4.3.7
-lgpio==0.2.2.0
-RPi.GPIO==0.7.1a4
-spidev==3.6
-gpiozero==2.0.1
+# Dépendances principales
+Flask==2.3.3
+Flask-CORS==4.0.0
+python-dotenv==1.0.0
+requests==2.31.0
 
-Flask
-requests
-python-dotenv
+# GPIO Raspberry Pi 5
+lgpio==0.2.2.0
+adafruit-circuitpython-dht==4.0.10
+
+# Firebase
+firebase-admin==6.2.0
+
+# AI/ML (optionnel)
+google-generativeai==0.3.2
+
+# Utilitaires
+colorlog==6.8.0

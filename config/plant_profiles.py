@@ -10,6 +10,7 @@ class PlantProfile:
     soil_type: str
     min_moisture: float
     max_moisture: float
+    optimal_moisture: float
     water_needs: str  # "Low", "Medium", "High"
     description: str
 
@@ -19,6 +20,7 @@ PLANT_PROFILES: Dict[str, PlantProfile] = {
         soil_type="Argileux",
         min_moisture=40.0,
         max_moisture=80.0,
+        optimal_moisture=60.0,
         water_needs="Medium",
         description="Nécessite un sol bien drainé et régulièrement humide."
     ),
@@ -27,6 +29,7 @@ PLANT_PROFILES: Dict[str, PlantProfile] = {
         soil_type="Sableux",
         min_moisture=10.0,
         max_moisture=30.0,
+        optimal_moisture=20.0,
         water_needs="Low",
         description="Arrosage minimal, sol doit sécher complètement entre les arrosages."
     ),
@@ -35,6 +38,7 @@ PLANT_PROFILES: Dict[str, PlantProfile] = {
         soil_type="Humifère",
         min_moisture=60.0,
         max_moisture=85.0,
+        optimal_moisture=72.5,
         water_needs="High",
         description="Nécessite un sol constamment humide mais pas détrempé."
     ),
@@ -43,11 +47,25 @@ PLANT_PROFILES: Dict[str, PlantProfile] = {
         soil_type="Limonneux",
         min_moisture=50.0,
         max_moisture=75.0,
+        optimal_moisture=62.5,
         water_needs="Medium",
         description="Arrosage profond mais peu fréquent."
+    ),
+    "basil": PlantProfile(
+        name="Basilic",
+        soil_type="Léger",
+        min_moisture=50.0,
+        max_moisture=70.0,
+        optimal_moisture=60.0,
+        water_needs="Medium-High",
+        description="Aime l'humidité constante mais craint l'eau stagnante."
     )
 }
 
 def get_plant_profile(plant_name: str) -> PlantProfile:
     """Retourne le profil d'une plante"""
     return PLANT_PROFILES.get(plant_name.lower(), PLANT_PROFILES["tomato"])
+
+def list_available_plants() -> list:
+    """Retourne la liste des plantes disponibles"""
+    return list(PLANT_PROFILES.keys())

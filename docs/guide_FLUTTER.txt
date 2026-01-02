@@ -1,0 +1,17 @@
+# 📱 GUIDE INTÉGRATION FLUTTER
+
+## URLs IMPORTANTES
+- API Base: http://192.168.1.29:5000
+- Interface web: http://192.168.1.29:5000/
+
+## ENDPOINTS PRINCIPAUX
+
+### 1. Authentification (HORS LIGNE)
+```dart
+// Inscription
+POST /api/auth/register
+Body: {"username": "...", "password": "...", "email": "..."}
+
+// Connexion  
+POST /api/auth/login
+Body: {"username": "...", "password": "..."}

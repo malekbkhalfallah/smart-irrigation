@@ -1,69 +1,45 @@
 """
-Capteur de pluie (digital)
+Capteur digital de pluie - UTILISE GPIO CENTRAL
+Broche: GPIO27 (pin 13)
+Logique: 0 = pluie détectée, 1 = sec
 """
-import time
 import logging
 from typing import Optional, Dict, Any
-from .base_sensor import BaseSensor
+from sensors.base_sensor import BaseSensor
+from core.gpio_manager import gpio_central
 
 logger = logging.getLogger(__name__)
 
 class RaindropSensor(BaseSensor):
-    """Capteur digital de pluie - 0 = pluie, 1 = sec"""
+    """Capteur digital de pluie - UTILISE GPIO CENTRAL"""
     
-    def __init__(self, pin: int = 27):  # PAS de inverted_logic!
+    def __init__(self, pin: int = 27):
         super().__init__(name="Raindrop", pin=pin)
-        self.chip = None
-        self.setup_gpio()
-
-    def setup_gpio(self):
-        """Configuration GPIO"""
-        try:
-            import lgpio
-            self.chip = lgpio.gpiochip_open(0)
-            lgpio.gpio_claim_input(self.chip, self.pin)
-            logger.info(f"Raindrop initialisé sur GPIO{self.pin}")
-        except ImportError:
-            logger.warning("lgpio non disponible - mode simulation")
-            self.chip = None
-        except Exception as e:
-            logger.error(f"Erreur initialisation Raindrop: {e}")
-            self.chip = None
+        logger.info(f"✅ Raindrop initialisé sur GPIO{pin} - UTILISE GPIO CENTRAL")
     
-    def read(self) -> Optional[Dict[str, Any]]:
-        """Lecture de l'état pluie - 0 = pluie, 1 = sec"""
-        if not self.chip:
-            # Mode simulation
-            return {
-                "rain_detected": False,
-                "raw_value": 1,
-                "state": "DRY",
-                "timestamp": time.time()
-            }
-            
+    def read_raw(self) -> Optional[Dict[str, Any]]:
+        """
+        Lecture de l'état pluie/sec via GPIO central
+        Returns: dict avec état de pluie
+        """
         try:
-            import lgpio
-            raw_value = lgpio.gpio_read(self.chip, self.pin)
+            # Lecture via GPIO central
+            raw_value = gpio_central.read(self.pin)
             
-            # 0 = pluie détectée, 1 = sec
+            # 0 = pluie détectée (gouttes sur le capteur)
+            # 1 = sec (pas de gouttes)
             rain_detected = raw_value == 0
             
             return {
                 "rain_detected": rain_detected,
                 "raw_value": raw_value,
-                "state": "RAINING" if rain_detected else "DRY",
-                "timestamp": time.time()
+                "state": "RAINING" if rain_detected else "DRY"
             }
             
         except Exception as e:
-            logger.error(f"Erreur lecture Raindrop: {e}")
+            logger.error(f"❌ Erreur lecture Raindrop: {str(e)}")
             return None
     
     def cleanup(self):
-        """Nettoyage"""
-        if self.chip:
-            try:
-                import lgpio
-                lgpio.gpiochip_close(self.chip)
-            except:
-                pass
+        """Nettoyage - Le GPIO est géré centralement"""
+        pass
